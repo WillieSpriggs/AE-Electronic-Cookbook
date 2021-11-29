@@ -6,7 +6,11 @@ def execute_query(cursor,command):
     try:
         cursor.execute(command)
     except Exception as err:
-        print(err)
+        if type(err) == psycopg2.errors.DuplicateDatabase:
+            global init_db
+            init_db = False
+        else:
+            print(err)
     finally:
         return cursor
 
@@ -31,27 +35,18 @@ def print_query(cursor):
         return
 
 conn,cursor = connect_db("postgres")
-
-try:
-    create_db = '''CREATE database aggieeats'''; #create the db
-    cursor.execute(create_db)
-    print("Database initialized")
-except psycopg2.errors.DuplicateDatabase:
-    print("Database already exists")
-    init_db = False
-finally:
-    print("Closed initial DB")
-    conn.close() #close initial connection
-
-
+create_db = '''CREATE database aggieeats''';
+cursor = execute_query(cursor,create_db)
 conn,cursor = connect_db("aggieeats")
 
-create_table = '''CREATE TABLE test2 (key INTEGER, value INTEGER)''';
-insert = '''INSERT INTO test2 (key,value) VALUES (5,6) ''';
-search = '''SELECT * FROM test1''';
-cursor = execute_query(cursor,create_table)
-cursor = execute_query(cursor,insert)
-cursor = execute_query(cursor,search)
-print_query(cursor)
-#Closing the connection
+if init_db: #create tables/schema
+    cmd = ''
+    with open('..\\lib\\sql.txt', 'r') as file:
+        cmd += file.read().replace('\n', '')
+    cursor = execute_query(cursor,cmd)
+
+else:
+    #proceed to gui, gui interfaces wuth backend to perform sql queries
+    pass
+
 conn.close()
