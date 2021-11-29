@@ -12,7 +12,7 @@ def execute_query(cursor,command):
         else:
             print(err)
     finally:
-        return cursor
+        return
 
 def connect_db(db_name):
     try:
@@ -36,15 +36,14 @@ def print_query(cursor):
 
 conn,cursor = connect_db("postgres")
 create_db = '''CREATE database aggieeats''';
-cursor = execute_query(cursor,create_db)
+execute_query(cursor,create_db)
 conn,cursor = connect_db("aggieeats")
 
-if init_db: #create tables/schema
+if init_db: #create tables/schema along with DB
     cmd = ''
     with open('..\\lib\\sql.txt', 'r') as file:
-        cmd += file.read().replace('\n', '')
-    cursor = execute_query(cursor,cmd)
-
+        cmd += file.read().replace('\n', '') #append all 7 CREATE TABLE commands to cmd
+    execute_query(cursor,cmd)
 else:
     #proceed to gui, gui interfaces wuth backend to perform sql queries
     pass
