@@ -64,6 +64,15 @@ def search_for_recipe_by_name(cursor,search_word): #searces recipes by name
     finally:
         pass
 
+def login(cursor,username,password): #takes in username and password entered into fields, checks if correct
+    pass
+
+def register(cursor,username,password): #takes in username and password entered into fields, checks if valid length, checks if already exists
+    #check if username exists block
+    #check if password valid block
+    #check if fname and lname not empty and only char
+    pass
+
 conn,cursor = connect_db("postgres") #sign into default postgres db to create aggieeats db
 execute_query(cursor,'CREATE database aggieeats;') #attempt to create aggieeats db, does nothing if already exists
 conn,cursor = connect_db("aggieeats") #connect to aggieeats db
