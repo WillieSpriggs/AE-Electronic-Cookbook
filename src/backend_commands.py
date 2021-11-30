@@ -54,8 +54,15 @@ def insert(cursor,table,cols,vals):
     finally:
         return
 
-def search(search_word):
-    pass
+def search_for_recipe_by_name(cursor,search_word): #searces recipes by name
+    try:
+        command = "SELECT name FROM recipe WHERE name LIKE \'%" + str(search_word) + "%\';"
+        cursor.execute(command)
+        print_query(cursor)
+    except Exception as err:
+        print(err)
+    finally:
+        pass
 
 conn,cursor = connect_db("postgres") #sign into default postgres db to create aggieeats db
 execute_query(cursor,'CREATE database aggieeats;') #attempt to create aggieeats db, does nothing if already exists
@@ -67,6 +74,7 @@ if init_db: #create tables/schema along with DB
         cmd += file.read().replace('\n', '') #append all 7 CREATE TABLE commands to cmd
     execute_query(cursor,cmd)
 
-insert(cursor,"recipe",["name","description"],["john","g"])
+#insert(cursor,"recipe",["name","description"],["john1","g"])
+#search(cursor, "jo")
 #proceed to gui, gui interfaces wuth backend to perform sql queries
 conn.close()
