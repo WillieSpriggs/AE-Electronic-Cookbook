@@ -34,9 +34,31 @@ def print_query(cursor):
     finally:
         return
 
+def insert(cursor,table,cols,vals):
+    l,v = len(cols),len(vals)
+    assert(l == v) 
+    try:
+        command = ["INSERT INTO " + table, " (",") VALUES (",");"]
+        for i in range(0,l):
+            val = vals[i]
+            if type(val) == str:
+                val = "\'" + val + "\'"
+            tmp = [str(cols[i]),str(val)]
+            if i < l-1:
+                tmp = [col + ", " for col in tmp]
+            command[1] += tmp[0]
+            command[2] += tmp[1]
+        cursor.execute("".join(command))
+    except Exception as err:
+        print(err)
+    finally:
+        return
+
+def search(search_word):
+    pass
+
 conn,cursor = connect_db("postgres") #sign into default postgres db to create aggieeats db
-create_db = '''CREATE database aggieeats''';
-execute_query(cursor,create_db) #attempt to create aggieeats db, does nothing if already exists
+execute_query(cursor,'CREATE database aggieeats;') #attempt to create aggieeats db, does nothing if already exists
 conn,cursor = connect_db("aggieeats") #connect to aggieeats db
 
 if init_db: #create tables/schema along with DB
@@ -45,6 +67,6 @@ if init_db: #create tables/schema along with DB
         cmd += file.read().replace('\n', '') #append all 7 CREATE TABLE commands to cmd
     execute_query(cursor,cmd)
 
+insert(cursor,"recipe",["name","description"],["john","g"])
 #proceed to gui, gui interfaces wuth backend to perform sql queries
-
 conn.close()
