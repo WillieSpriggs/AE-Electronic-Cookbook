@@ -87,10 +87,7 @@ class backend:
         try:
             self.execute_query(sql)
             self.get_results()
-            if self.results == []:
-                print("Password incorrect")
-            else:
-                print("Password correct")
+            print("Password incorrect") if self.results == [] else print("Password correct")             
         except Exception as err:
             print(err)
 
@@ -112,4 +109,6 @@ class backend:
             self.insert("creator",self.tables.creator,[username,self.hash(password),firstname,lastname])
 
 b = backend()
+b.register("user123","password1","user","name")
+b.login("user123","password1")
 b.conn.close()
