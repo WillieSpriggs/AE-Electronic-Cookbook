@@ -3,6 +3,7 @@ import hashlib
 
 class backend:
     init_db = True #bool to check whether tables need to be created for the DB
+    user = ""
     class tables:
         recpie = ["name","description"]
         ingredient = ["name"]
@@ -87,7 +88,11 @@ class backend:
         try:
             self.execute_query(sql)
             self.get_results()
-            print("Password incorrect") if self.results == [] else print("Password correct")             
+            if self.results == []:
+                print("Password incorrect") 
+            else:
+                print("Password correct")
+                self.user = username      
         except Exception as err:
             print(err)
 
@@ -107,6 +112,10 @@ class backend:
 
         if len(password) > 0 and len(firstname) > 0 and len(lastname) > 0 and new_username:
             self.insert("creator",self.tables.creator,[username,self.hash(password),firstname,lastname])
+    
+    def create_recipe(self):
+        #need list of ingredients with quantities, recipe name, list of steps, nutritional value, user, current date
+        pass
 
 b = backend()
 b.register("user123","password1","user","name")
