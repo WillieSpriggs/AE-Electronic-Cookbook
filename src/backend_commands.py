@@ -79,9 +79,11 @@ class backend:
             print(err)
         finally:
             pass"""
+    def hash(self,password):
+        return str(hashlib.sha3_512(password.encode()).hexdigest())
+
     def login(self,username,password): #takes in username and password entered into fields, checks if correct
-        t_hashed = hashlib.sha3_512(password.encode())
-        sql = "SELECT * FROM creator WHERE username = '" + username +"' AND password = '" + str(t_hashed.hexdigest()) + "';"
+        sql = "SELECT * FROM creator WHERE username = '" + username +"' AND password = '" + self.hash(password) + "';"
         try:
             self.execute_query(sql)
             self.get_results()
@@ -99,18 +101,15 @@ class backend:
             self.execute_query(sql)
             self.get_results()
             if self.results == []:
-                print("No match")
+                print("Eligible username")
             else:
-                print("Match")
+                print("Username already taken")
                 new_username = False     
         except Exception as err:
             print(err)
 
         if len(password) > 0 and len(firstname) > 0 and len(lastname) > 0 and new_username:
-            t_hashed = hashlib.sha3_512(password.encode())
-            self.insert("creator",self.tables.creator,[username,str(t_hashed.hexdigest()),firstname,lastname])
+            self.insert("creator",self.tables.creator,[username,self.hash(password),firstname,lastname])
 
 b = backend()
-#b.register("wicker123","fish12","eli","cox")
-b.login("wicker123","fish12")
 b.conn.close()
