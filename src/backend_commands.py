@@ -1,89 +1,116 @@
 import psycopg2
+import hashlib
 
-init_db = True #bool to check whether tables need to be created for the DB
+class backend:
+    init_db = True #bool to check whether tables need to be created for the DB
+    class tables:
+        recpie = ["name","description"]
+        ingredient = ["name"]
+        creator = ["username","password","firstname","lastname"]
+        created_by = ["creator_user","recipe_name","date_created","last_updated"]
+        contains_ingredient = ["recipe_name","ingredient_name","amount","measurement"]
+        step = ["recipe_name","num","description"]
+        nutrition = ["recipe_name", "servings" , "calories" , "saturated_fat" , "trans_fat" , "cholesterol" , "sodium" , "total_carbs", "dietary_fiber", "sugars", "protein"]
+    
+    def __init__(self) -> None:
+        self.connect_db("postgres") #sign into default postgres db to create aggieeats db
+        self.execute_query('CREATE database aggieeats;') #attempt to create aggieeats db, does nothing if already exists
+        self.connect_db("aggieeats") #connect to aggieeats db
+        if self.init_db: #create tables/schema along with DB
+            cmd = ''
+            with open('..\\lib\\sql.txt', 'r') as file:
+                cmd += file.read().replace('\n', '') #append all 7 CREATE TABLE commands to cmd
+            self.execute_query(cmd)
 
-def execute_query(cursor,command):
-    try:
-        cursor.execute(command)
-    except Exception as err:
-        if type(err) == psycopg2.errors.DuplicateDatabase: #check for preexisting DB to see if new tables need to be added
-            global init_db
-            init_db = False
-        else:
+    def execute_query(self,command):
+        try:
+            self.cursor.execute(command)
+        except Exception as err:
+            if type(err) == psycopg2.errors.DuplicateDatabase: #check for preexisting DB to see if new tables need to be added
+                self.init_db = False
+            else:
+                print(err)
+
+    def connect_db(self,db_name):
+        try:
+            self.conn = psycopg2.connect(database=db_name, user='postgres', password='admin', host='127.0.0.1', port= '5432') #establishing the connection)
+            self.conn.autocommit = True
+            self.cursor = self.conn.cursor()
+        except Exception as err:
             print(err)
-    finally:
-        return
+    
+    def get_results(self):
+        try:  
+            self.results = self.cursor.fetchall()
+        except Exception as err:
+            print(err)
+    
+    def print_query(self):
+        try:  
+            self.get_results()
+            for r in self.results:
+                print(r)
+        except Exception as err:
+            print(err)
 
-def connect_db(db_name):
-    try:
-        conn = psycopg2.connect(database=db_name, user='postgres', password='admin', host='127.0.0.1', port= '5432') #establishing the connection)
-        conn.autocommit = True
-        cursor = conn.cursor()
-    except Exception as err:
-        print(err)
-    finally:
-        return conn,cursor
+    def insert(self,table,cols,vals):
+        l,v = len(cols),len(vals)
+        assert(l == v)
+        try:
+            command = ["INSERT INTO " + table, " (",") VALUES (",");"]
+            for i in range(0,l):
+                val = vals[i]
+                if type(val) == str:
+                    val = "\'" + val + "\'"
+                tmp = [str(cols[i]),str(val)]
+                if i < l-1:
+                    tmp = [col + ", " for col in tmp]
+                command[1] += tmp[0]
+                command[2] += tmp[1]
+            self.cursor.execute("".join(command))
+        except Exception as err:
+            print(err)  
+    """def search_for_recipe_by_name(self,search_word): #searces recipes by name
+        try:
+            command = "SELECT name FROM recipe WHERE name LIKE \'%" + str(search_word) + "%\';"
+            self.cursor.execute(command)
+            self.print_query(cursor)
+        except Exception as err:
+            print(err)
+        finally:
+            pass"""
+    def login(self,username,password): #takes in username and password entered into fields, checks if correct
+        t_hashed = hashlib.sha3_512(password.encode())
+        sql = "SELECT * FROM creator WHERE username = '" + username +"' AND password = '" + str(t_hashed.hexdigest()) + "';"
+        try:
+            self.execute_query(sql)
+            self.get_results()
+            if self.results == []:
+                print("Password incorrect")
+            else:
+                print("Password correct")
+        except Exception as err:
+            print(err)
 
-def print_query(cursor):
-    try:  
-        results = cursor.fetchall()
-        for r in results:
-            print(r)
-    except Exception as err:
-        print(err)
-    finally:
-        return
+    def register(self,username,password,firstname,lastname): #takes in username and password entered into fields, checks if valid length, checks if already exists
+        new_username = True
+        try:#check if username exists block
+            sql = "SELECT * FROM creator WHERE username = '" +  username + "';"
+            self.execute_query(sql)
+            self.get_results()
+            if self.results == []:
+                print("No match")
+            else:
+                print("Match")
+                new_username = False     
+        except Exception as err:
+            print(err)
 
-def insert(cursor,table,cols,vals):
-    l,v = len(cols),len(vals)
-    assert(l == v) 
-    try:
-        command = ["INSERT INTO " + table, " (",") VALUES (",");"]
-        for i in range(0,l):
-            val = vals[i]
-            if type(val) == str:
-                val = "\'" + val + "\'"
-            tmp = [str(cols[i]),str(val)]
-            if i < l-1:
-                tmp = [col + ", " for col in tmp]
-            command[1] += tmp[0]
-            command[2] += tmp[1]
-        cursor.execute("".join(command))
-    except Exception as err:
-        print(err)
-    finally:
-        return
+        if len(password) > 0 and len(firstname) > 0 and len(lastname) > 0 and new_username:
+            t_hashed = hashlib.sha3_512(password.encode())
+            self.insert("creator",self.tables.creator,[username,str(t_hashed.hexdigest()),firstname,lastname])
 
-def search_for_recipe_by_name(cursor,search_word): #searces recipes by name
-    try:
-        command = "SELECT name FROM recipe WHERE name LIKE \'%" + str(search_word) + "%\';"
-        cursor.execute(command)
-        print_query(cursor)
-    except Exception as err:
-        print(err)
-    finally:
-        pass
-
-def login(cursor,username,password): #takes in username and password entered into fields, checks if correct
-    pass
-
-def register(cursor,username,password): #takes in username and password entered into fields, checks if valid length, checks if already exists
-    #check if username exists block
-    #check if password valid block
-    #check if fname and lname not empty and only char
-    pass
-
-conn,cursor = connect_db("postgres") #sign into default postgres db to create aggieeats db
-execute_query(cursor,'CREATE database aggieeats;') #attempt to create aggieeats db, does nothing if already exists
-conn,cursor = connect_db("aggieeats") #connect to aggieeats db
-
-if init_db: #create tables/schema along with DB
-    cmd = ''
-    with open('..\\lib\\sql.txt', 'r') as file:
-        cmd += file.read().replace('\n', '') #append all 7 CREATE TABLE commands to cmd
-    execute_query(cursor,cmd)
-
-#insert(cursor,"recipe",["name","description"],["john1","g"])
-#search(cursor, "jo")
-#proceed to gui, gui interfaces wuth backend to perform sql queries
-conn.close()
+b = backend()
+#b.register("wicker123","fish12","eli","cox")
+b.login("wicker123","fish12")
+b.conn.close()
