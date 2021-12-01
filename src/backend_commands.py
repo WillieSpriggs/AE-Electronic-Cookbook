@@ -1,5 +1,7 @@
 import psycopg2
 import hashlib
+import datetime
+import time
 
 class backend:
     init_db = True #bool to check whether tables need to be created for the DB
@@ -29,6 +31,7 @@ class backend:
     def drop_db(self):
         self.connect_db("postgres")
         self.execute_query("DROP DATABASE aggieeats;")
+        self.conn.close()
         exit(0)
 
     def execute_query(self,command):
@@ -121,6 +124,9 @@ class backend:
             self.insert("creator",self.tables.creator,[username,self.hash(password),firstname,lastname])
     
     def create_recipe(self):
+        ct = datetime.datetime.now()
+        print("current time:-", ct)
+        
         #need list of ingredients with quantities, recipe name, list of steps, nutritional value, user, current date
         pass
 
