@@ -69,16 +69,16 @@ class backend:
                 command[2] += tmp[1]
             self.cursor.execute("".join(command))
         except Exception as err:
-            print(err)  
-    """def search_for_recipe_by_name(self,search_word): #searces recipes by name
+            print(err) 
+ 
+    def search_for_recipe_by_name(self,search_word): #searces recipes by name
         try:
             command = "SELECT name FROM recipe WHERE name LIKE \'%" + str(search_word) + "%\';"
             self.cursor.execute(command)
-            self.print_query(cursor)
+            self.print_query(self.cursor)
         except Exception as err:
             print(err)
-        finally:
-            pass"""
+
     def hash(self,password):
         return str(hashlib.sha3_512(password.encode()).hexdigest())
 
