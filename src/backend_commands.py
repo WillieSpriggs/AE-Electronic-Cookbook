@@ -3,14 +3,14 @@ import hashlib
 
 class backend:
     init_db = True #bool to check whether tables need to be created for the DB
-    class tables:
-        recpie = ["name","description"]
-        ingredient = ["name"]
-        creator = ["username","password","firstname","lastname"]
-        created_by = ["creator_user","recipe_name","date_created","last_updated"]
-        contains_ingredient = ["recipe_name","ingredient_name","amount","measurement"]
-        step = ["recipe_name","num","description"]
-        nutrition = ["recipe_name", "servings" , "calories" , "saturated_fat" , "trans_fat" , "cholesterol" , "sodium" , "total_carbs", "dietary_fiber", "sugars", "protein"]
+    recpie = ["name","description"]
+    ingredient = ["name"]
+    creator = ["username","password","firstname","lastname"]
+    created_by = ["creator_user","recipe_name","date_created","last_updated"]
+    contains_ingredient = ["recipe_name","ingredient_name","amount","measurement"]
+    step = ["recipe_name","num","description"]
+    nutrition = ["recipe_name", "servings" , "calories" , "saturated_fat" , "trans_fat" , "cholesterol" , "sodium" , "total_carbs", "dietary_fiber", "sugars", "protein"]
+    table_map = {"recipe":recpie,"ingredient":ingredient,"creator":creator,"created_by":created_by,"contains_ingredient":contains_ingredient,"step":step,"nutrition":nutrition}
     
     def __init__(self) -> None:
         self.connect_db("postgres") #sign into default postgres db to create aggieeats db
@@ -25,6 +25,7 @@ class backend:
     def execute_query(self,command):
         try:
             self.cursor.execute(command)
+            self.get_results()
         except Exception as err:
             if type(err) == psycopg2.errors.DuplicateDatabase: #check for preexisting DB to see if new tables need to be added
                 self.init_db = False
@@ -53,28 +54,26 @@ class backend:
         except Exception as err:
             print(err)
 
-    def insert(self,table,cols,vals):
+    def insert(self,table,vals):
+        cols = self.table_map[table]
         l,v = len(cols),len(vals)
         assert(l == v)
         try:
-            command = ["INSERT INTO " + table, " (",") VALUES (",");"]
-            for i in range(0,l):
-                val = vals[i]
-                if type(val) == str:
-                    val = "\'" + val + "\'"
-                tmp = [str(cols[i]),str(val)]
-                if i < l-1:
-                    tmp = [col + ", " for col in tmp]
-                command[1] += tmp[0]
-                command[2] += tmp[1]
-            self.cursor.execute("".join(command))
+            command = ["INSERT INTO " + table + " (",") VALUES (",");"]
+            for (col,val) in zip(cols,vals):
+                command[0] += col
+                command[1] += val if type(val) != str else "\'" + val + "\'" 
+                if col != cols[-1]:
+                    command[0] += ", "  
+                    command[1] += ", "
+            self.execute_query("".join(command))
         except Exception as err:
             print(err) 
  
     def search_for_recipe_by_name(self,search_word): #searces recipes by name
         try:
             command = "SELECT name FROM recipe WHERE name LIKE \'%" + str(search_word) + "%\';"
-            self.cursor.execute(command)
+            self.execute_query(command)
             self.print_query(self.cursor)
         except Exception as err:
             print(err)
@@ -106,9 +105,9 @@ class backend:
             print(err)
 
         if len(password) > 0 and len(firstname) > 0 and len(lastname) > 0 and new_username:
-            self.insert("creator",self.tables.creator,[username,self.hash(password),firstname,lastname])
+            self.insert("creator",[username,self.hash(password),firstname,lastname])
 
 b = backend()
-b.register("user123","password1","user","name")
-b.login("user123","password1")
+b.register("user12112113","password1","user","name")
+b.login("user12213","password1")
 b.conn.close()
