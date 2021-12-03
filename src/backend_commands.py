@@ -1,38 +1,26 @@
 import psycopg2
 import hashlib
-import datetime
-import time
 
 class backend:
     init_db = True #bool to check whether tables need to be created for the DB
-    user = ""
-    class tables:
-        recpie = ["name","description"]
-        ingredient = ["name"]
-        creator = ["username","password","firstname","lastname"]
-        created_by = ["creator_user","recipe_name","date_created","last_updated"]
-        contains_ingredient = ["recipe_name","ingredient_name","amount","measurement"]
-        step = ["recipe_name","num","description"]
-        nutrition = ["recipe_name", "servings" , "calories" , "saturated_fat" , "trans_fat" , "cholesterol" , "sodium" , "total_carbs", "dietary_fiber", "sugars", "protein"]
+    recpie = ["name","description"]
+    ingredient = ["name"]
+    creator = ["username","password","firstname","lastname"]
+    created_by = ["creator_user","recipe_name","date_created","last_updated"]
+    contains_ingredient = ["recipe_name","ingredient_name","amount","measurement"]
+    step = ["recipe_name","num","description"]
+    nutrition = ["recipe_name", "servings" , "calories" , "saturated_fat" , "trans_fat" , "cholesterol" , "sodium" , "total_carbs", "dietary_fiber", "sugars", "protein"]
+    table_map = {"recipe":recpie,"ingredient":ingredient,"creator":creator,"created_by":created_by,"contains_ingredient":contains_ingredient,"step":step,"nutrition":nutrition}
     
     def __init__(self) -> None:
         self.connect_db("postgres") #sign into default postgres db to create aggieeats db
         self.execute_query('CREATE database aggieeats;') #attempt to create aggieeats db, does nothing if already exists
         self.connect_db("aggieeats") #connect to aggieeats db
         if self.init_db: #create tables/schema along with DB
-            self.populate_db()
-    
-    def populate_db(self):
-        cmd = ''
-        with open('..\\lib\\sql.txt', 'r') as file:
-            cmd += file.read().replace('\n', '') #append all 7 CREATE TABLE commands to cmd
-        self.execute_query(cmd)
-    
-    def drop_db(self):
-        self.connect_db("postgres")
-        self.execute_query("DROP DATABASE aggieeats;")
-        self.conn.close()
-        exit(0)
+            cmd = ''
+            with open('..\\lib\\sql.txt', 'r') as file:
+                cmd += file.read().replace('\n', '') #append all 7 CREATE TABLE commands to cmd
+            self.execute_query(cmd)
 
     def execute_query(self,command):
         try:
@@ -56,38 +44,36 @@ class backend:
         try:  
             self.results = self.cursor.fetchall()
         except Exception as err:
-            pass
-            #print(err)
+            print(err)
     
     def print_query(self):
-        try:
+        try:  
+            self.get_results()
             for r in self.results:
                 print(r)
         except Exception as err:
             print(err)
 
-    def insert(self,table,cols,vals):
+    def insert(self,table,vals):
+        cols = self.table_map[table]
         l,v = len(cols),len(vals)
-        sql = ["INSERT INTO " + table, " (",") VALUES (",");"]
         assert(l == v)
-        for i in range(0,l):
-            val = vals[i]
-            if type(val) == str:
-                val = "\'" + val + "\'"
-            tmp = [str(cols[i]),str(val)]
-            if i < l-1:
-                tmp = [col + ", " for col in tmp]
-            sql[1] += tmp[0]
-            sql[2] += tmp[1]
         try:
-            self.cursor.execute("".join(sql))
+            command = ["INSERT INTO " + table + " (",") VALUES (",");"]
+            for (col,val) in zip(cols,vals):
+                command[0] += col
+                command[1] += val if type(val) != str else "\'" + val + "\'" 
+                if col != cols[-1]:
+                    command[0] += ", "  
+                    command[1] += ", "
+            self.execute_query("".join(command))
         except Exception as err:
             print(err) 
  
     def search_for_recipe_by_name(self,search_word): #searces recipes by name
         try:
             command = "SELECT name FROM recipe WHERE name LIKE \'%" + str(search_word) + "%\';"
-            self.cursor.execute(command)
+            self.execute_query(command)
             self.print_query(self.cursor)
         except Exception as err:
             print(err)
@@ -99,19 +85,17 @@ class backend:
         sql = "SELECT * FROM creator WHERE username = '" + username +"' AND password = '" + self.hash(password) + "';"
         try:
             self.execute_query(sql)
-            if self.results == []:
-                print("Password incorrect") 
-            else:
-                print("Password correct")
-                self.user = username      
+            self.get_results()
+            print("Password incorrect") if self.results == [] else print("Password correct")             
         except Exception as err:
             print(err)
 
     def register(self,username,password,firstname,lastname): #takes in username and password entered into fields, checks if valid length, checks if already exists
         new_username = True
-        sql = "SELECT * FROM creator WHERE username = '" +  username + "';"
-        try:
-            self.execute_query(sql) #check if username exists
+        try:#check if username exists block
+            sql = "SELECT * FROM creator WHERE username = '" +  username + "';"
+            self.execute_query(sql)
+            self.get_results()
             if self.results == []:
                 print("Eligible username")
             else:
@@ -121,17 +105,9 @@ class backend:
             print(err)
 
         if len(password) > 0 and len(firstname) > 0 and len(lastname) > 0 and new_username:
-            self.insert("creator",self.tables.creator,[username,self.hash(password),firstname,lastname])
-    
-    def create_recipe(self):
-        ct = datetime.datetime.now()
-        print("current time:-", ct)
-        
-        #need list of ingredients with quantities, recipe name, list of steps, nutritional value, user, current date
-        pass
+            self.insert("creator",[username,self.hash(password),firstname,lastname])
 
 b = backend()
-b.register("user123","password1","user","name")
-b.login("user123","password1")
-b.drop_db()
+b.register("user12112113","password1","user","name")
+b.login("user12213","password1")
 b.conn.close()
