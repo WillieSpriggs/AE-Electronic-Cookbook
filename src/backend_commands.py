@@ -40,11 +40,17 @@ class backend:
         except Exception as err:
             print(err)
     
+    def close_connection(self):
+        try:
+            self.conn.close()
+        except Exception as err:
+            print(err)     
+    
     def get_results(self):
         try:  
             self.results = self.cursor.fetchall()
         except Exception as err:
-            print(err)
+            return
     
     def print_query(self):
         try:  
@@ -85,29 +91,21 @@ class backend:
         sql = "SELECT * FROM creator WHERE username = '" + username +"' AND password = '" + self.hash(password) + "';"
         try:
             self.execute_query(sql)
-            self.get_results()
-            print("Password incorrect") if self.results == [] else print("Password correct")             
+            if self.results == []:
+                return False
+            else:   
+                return True           
         except Exception as err:
             print(err)
 
     def register(self,username,password,firstname,lastname): #takes in username and password entered into fields, checks if valid length, checks if already exists
-        new_username = True
         try:#check if username exists block
-            sql = "SELECT * FROM creator WHERE username = '" +  username + "';"
-            self.execute_query(sql)
-            self.get_results()
+            self.execute_query("SELECT * FROM creator WHERE username = '" +  username + "';")
             if self.results == []:
-                print("Eligible username")
+                if len(password) > 0 and len(firstname) > 0 and len(lastname) > 0:
+                    self.insert("creator",[username,self.hash(password),firstname,lastname])
+                    return True
             else:
-                print("Username already taken")
-                new_username = False     
+                return False
         except Exception as err:
             print(err)
-
-        if len(password) > 0 and len(firstname) > 0 and len(lastname) > 0 and new_username:
-            self.insert("creator",[username,self.hash(password),firstname,lastname])
-
-b = backend()
-b.register("user12112113","password1","user","name")
-b.login("user12213","password1")
-b.conn.close()
