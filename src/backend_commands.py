@@ -44,7 +44,16 @@ class backend:
         try:
             self.conn.close()
         except Exception as err:
-            print(err)     
+            print(err)
+
+    def drop_db(self):
+        try:
+            self.close_connection()
+            self.connect_db("postgres")
+            self.execute_query("drop database aggieeats;")
+            self.close_connection()
+        except Exception as err:
+            pass
     
     def get_results(self):
         try:  

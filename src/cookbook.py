@@ -207,4 +207,5 @@ class EditRecipe(tk.Frame):
 if __name__ == "__main__":
   app = Application()
   app.mainloop()
-  #pass
+  #global_backend.drop_db()
+
