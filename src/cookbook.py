@@ -9,21 +9,42 @@ class Application(tk.Tk):
   def __init__(self, *args, **kwargs):
     tk.Tk.__init__(self, *args, **kwargs)
 
-    container = tk.Frame(self)
-    container.pack(side='top', fill='both', expand=True)
-    container.grid_rowconfigure(0, weight=1)
-    container.grid_columnconfigure(0, weight=1)
+    self.container = tk.Frame(self)
+    self.container.pack(side='top', fill='both', expand=True)
+    self.container.grid_rowconfigure(0, weight=1)
+    self.container.grid_columnconfigure(0, weight=1)
 
     self.frames = {}
     self.current_recipe = None
 
-    for F in (Login, SignUp, Home, ViewRecipe, EditRecipe):
-      page_name = F.__name__
-      frame = F(parent=container, controller=self)
-      self.frames[page_name] = frame
-      frame.grid(row=0, column=0, sticky='nsew')
+    for F in (Login, SignUp):
+      self.add_frame(F)
     
     self.show_frame('Login')
+
+  def load_home_frame(self):
+    self.add_frame(Home)
+    self.show_frame('Home')
+
+  def load_recipe_frame(self):
+    self.add_frame(ViewRecipe)
+    self.show_frame('ViewRecipe')
+
+  def load_edit_frame(self):
+    self.add_frame(EditRecipe)
+    self.show_frame('EditRecipe')
+
+  def add_frame(self, F):
+    page_name = F.__name__
+    frame = F(parent=self.container, controller=self)
+    self.frames[page_name] = frame
+    frame.grid(row=0, column=0, sticky='nsew')
+  
+  def remove_frame(self, page_name):
+    frame = self.frames[page_name]
+    del self.frames[page_name]
+    frame.grid_forget()
+    frame.destroy()
 
   def show_frame(self, page_name):
     frame=self.frames[page_name]
