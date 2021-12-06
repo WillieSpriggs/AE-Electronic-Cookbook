@@ -93,7 +93,7 @@ class Login(tk.Frame):
       if self.pw_err != None:
         self.pw_err.after(1,self.pw_err.destroy())
         self.pw_err = None
-      self.controller.show_frame('Home')
+      self.controller.load_home_frame()
     else:
       self.pw_err = tk.Label(self, text='Incorrect username/password')
       self.pw_err.grid(row=4, column=1, sticky=tk.E, padx=0, pady=0)
