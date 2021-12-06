@@ -1,6 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
 from functools import partial
+from backend_commands import backend
+
+global_backend = backend()
 
 class Application(tk.Tk):
   def __init__(self, *args, **kwargs):
@@ -82,16 +85,32 @@ class Login(tk.Frame):
     login_button.grid(row=3, column=1, sticky=tk.E, padx=10, pady=(2,10))
 
   def login(self):
-    print('signing in user: ', self.username_content.get(), '\nwtih password: ', self.password_content.get())
-    self.controller.load_home_frame()
+    usr = self.username_content.get()
+    pw = self.password_content.get()
+    if global_backend.login(usr,pw) == True:
+      if self.pw_err != None:
+        self.pw_err.after(1,self.pw_err.destroy())
+        self.pw_err = None
+      self.controller.show_frame('Home')
+    else:
+      self.pw_err = tk.Label(self, text='Incorrect username/password')
+      self.pw_err.grid(row=4, column=1, sticky=tk.E, padx=0, pady=0)
+      self.username_entry.delete(0,'end')
+      self.password_entry.delete(0,'end')
   
   def signup(self):
+    if self.pw_err != None:
+      self.pw_err.after(1,self.pw_err.destroy())
+      self.pw_err = None
+    self.password_entry.delete(0,'end')
+    self.username_entry.delete(0,'end')
     self.controller.show_frame('SignUp')
 
 class SignUp(tk.Frame):
   def __init__(self, parent, controller):
     tk.Frame.__init__(self, parent)
     self.controller = controller
+    self.usr_taken = None
 
     signup_label = tk.Label(self, text='Sign Up')
     signup_label.grid(row=0, column=0, sticky=tk.W, padx=10, pady=(10, 5))
@@ -116,11 +135,28 @@ class SignUp(tk.Frame):
     signup_button.grid(row=3, column=1, sticky=tk.E, padx=10, pady=(2,10))
   
   def back_to_login(self):
+    if self.usr_taken != None:
+      self.usr_taken.after(1,self.usr_taken.destroy())
+      self.usr_taken = None
+    self.password_entry.delete(0,'end')
+    self.username_entry.delete(0,'end')
     self.controller.show_frame('Login')
 
   def create_user(self):
-    print('registering user: ', self.username_content.get(), '\nwtih password: ', self.password_content.get())
-    self.controller.load_home_frame()
+    usr = self.username_content.get()
+    pw = self.password_content.get()
+    self.password_entry.delete(0,'end')
+    self.username_entry.delete(0,'end')
+    if global_backend.register(usr,pw,"testf","testl") == True:
+      print('registering user: ', usr, '\nwtih password: ', pw)
+      if self.usr_taken != None:
+        self.usr_taken.after(1000,self.usr_taken.destroy())
+        self.usr_taken = None
+      self.controller.show_frame('Login')
+      
+    else:
+      self.usr_taken = tk.Label(self, text='Username taken')
+      self.usr_taken.grid(row=4, column = 1, sticky=tk.W, padx=10, pady=6)
 
 recipes = [{'name': 'Beef Stew', 'description': 'Really yummy stew.'}, 
         {'name': 'Chicken Alfredo', 'description': 'It has spinach in it. Yum.'}, 
