@@ -77,7 +77,7 @@ class backend:
             command = ["INSERT INTO " + table + " (",") VALUES (",");"]
             for (col,val) in zip(cols,vals):
                 command[0] += col
-                command[1] += val if type(val) != str else "\'" + val + "\'" 
+                command[1] += str(val) if type(val) != str else "\'" + val + "\'" 
                 if col != cols[-1]:
                     command[0] += ", "  
                     command[1] += ", "

@@ -195,11 +195,9 @@ class Home(tk.Frame):
     self.controller.remove_frame('Home')
 
   def create_recipe(self):
-    pass
-    # self.controller.set_current_recipe('new recipe')
-    # # create empty recipe in backend
-    # self.controller.load_recipe_frame()
-    # self.controller.remove_frame('Home')
+    self.controller.set_current_recipe('new recipe')
+    self.controller.load_recipe_frame()
+    self.controller.remove_frame('Home')
 
 created_by = [{'creator_user': 'Willie2018', 'recipe_name': '', 'date_created': '11/28/2021', 'last_updated': '11/29/2021'}]
 contains_ingredient = [{'recipe_name': '', 'ingredient_name': 'salt', 'amount': 1, 'measurement': 'tablespoon'}, 
@@ -346,12 +344,18 @@ class EditRecipe(tk.Frame):
     self.controller.show_frame('ViewRecipe')
     self.controller.remove_frame('EditRecipe')
 
+  def list_util(self,dict,table):
+    tmp = []
+    for ele in global_backend.table_map[table]:
+      if ele in dict:
+        tmp.append(dict[ele])
+    return tmp
+
   def submit_edits(self):
     self.controller.remove_frame('ViewRecipe')
-
     # Add edits to database
     recipe = {'name': self.recipe_title_contents.get(), 'description': self.description_contents.get()}
-    created_by = [{'creator_user': 'Willie2018', 'recipe_name': '', 'date_created': '11/28/2021', 'last_updated': '11/29/2021'}]
+    created_by = {'creator_user': 'a', 'recipe_name': self.recipe_title_contents.get(), 'date_created': '11/28/2021', 'last_updated': '11/29/2021'}
     contains_ingredient = []
     for ingredient_id in self.ingredients_dict:
       contains_ingredient.append({
@@ -363,6 +367,7 @@ class EditRecipe(tk.Frame):
     nutrition = {}
     for nutrition_fact in self.nutritition_dict:
       nutrition[nutrition_fact] = float(self.nutritition_dict[nutrition_fact].get())
+    nutrition["recipe_name"] = self.recipe_title_contents.get()
     steps = []
     for step_id in self.steps_dict:
       steps.append({
@@ -376,12 +381,26 @@ class EditRecipe(tk.Frame):
       step_intermidiate['num'] = i+1
       steps[i] = step_intermidiate
 
-    print(recipe)
-    print(created_by)
-    print(contains_ingredient)
-    print(nutrition)
-    print(steps)
+    recipe = self.list_util(recipe,"recipe")
+    nutrition = self.list_util(nutrition,"nutrition")
+    created_by = self.list_util(created_by,"created_by")
 
+    global_backend.insert("recipe",recipe) #update original insert
+
+    for ele in contains_ingredient:
+      global_backend.execute_query("select * from ingredient where name = '" + ele["ingredient_name"] + "';")
+      if len(global_backend.results) == 0:
+        global_backend.insert("ingredient",[ele["ingredient_name"]])
+  
+    for ele in contains_ingredient:
+      global_backend.insert("contains_ingredient",self.list_util(ele,"contains_ingredient"))
+
+    for ele in steps:
+      global_backend.insert("step",self.list_util(ele,"step"))
+
+    
+    global_backend.insert("created_by",created_by)
+    global_backend.insert("nutrition",nutrition)
     self.controller.load_recipe_frame()
     self.controller.remove_frame('EditRecipe')
 
@@ -424,7 +443,7 @@ class EditRecipe(tk.Frame):
       recipe_step = tk.Entry(self)
       recipe_step.grid(row=base_row+self.step_id, column=0, sticky=tk.W, padx=10)
       step_contents = tk.StringVar()
-      step_contents.set(S['description'])
+      step_contents.set(S['description']) 
       recipe_step['textvariable'] = step_contents
       delete_button = tk.Button(self, text='Delete', command=partial(self.delete_step, self.step_id))
       delete_button.grid(row=base_row+self.step_id, column=1, sticky=tk.W, padx=10)
