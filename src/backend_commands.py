@@ -20,22 +20,22 @@ class backend:
             cmd = ''
             with open('..\\lib\\sql.txt', 'r') as file:
                 cmd += file.read().replace('\n', '') #append all 7 CREATE TABLE commands to cmd
-            self.execute_query(cmd)
+            self.execute_query(cmd) #init tables
 
     def execute_query(self,command):
         try:
             self.cursor.execute(command)
-            self.get_results()
+            self.get_results() #automatically refreshes results
         except Exception as err:
             if type(err) == psycopg2.errors.DuplicateDatabase: #check for preexisting DB to see if new tables need to be added
-                self.init_db = False
+                self.init_db = False #this is used to say that an existing db was detected, do not init tables
             else:
-                print(err)
+                print(err) #for any other type of error, print it out for debugging
 
     def connect_db(self,db_name):
-        try:
+        try:  #login function to postgres, assumes password is ADMIN. YOU MAY (PROBABLY WILL) NEED TO CHANGE THIS!!!!
             self.conn = psycopg2.connect(database=db_name, user='postgres', password='admin', host='127.0.0.1', port= '5432') #establishing the connection)
-            self.conn.autocommit = True
+            self.conn.autocommit = True #reduce total loc by autocommitting
             self.cursor = self.conn.cursor()
         except Exception as err:
             print(err)
@@ -55,7 +55,7 @@ class backend:
         except Exception as err:
             pass
     
-    def get_results(self):
+    def get_results(self): #this function refreshes the result set and stores it in the class for later references
         try:  
             self.results = self.cursor.fetchall()
         except Exception as err:
@@ -63,16 +63,16 @@ class backend:
     
     def parenth_util(self,lst,table_val = False): #returns a (x,y,z,..) as str of insterted or updated vals
         ret = ""
-        str_delim = "\'" if not table_val else ""
+        str_delim = "\'" if not table_val else "" #get delimiter for strings to conv to sql string format UNLESS its the table column names
 
         for i in range(0,len(lst)):
-            ret += str(lst[i]) if type(lst[i]) != str else str_delim + lst[i] + str_delim    
-            ret += ", " if i < len(lst)-1 else ""
+            ret += str(lst[i]) if type(lst[i]) != str else str_delim + lst[i] + str_delim #add ele
+            ret += ", " if i < len(lst)-1 else "" #add comma if not last
         return "("+ret+")"
 
-    def insert(self,table,vals):
+    def insert(self,table,vals): #NEED TO UPDATE: add capability to take in a cols, vals list < max len of cols list
         cols = self.table_map[table]
-        l,v = len(cols),len(vals)
+        l,v = len(cols),len(vals) #assert same number of cols and rows
         assert(l == v)
         try:
             command = "INSERT INTO " + table + " " + self.parenth_util(cols,True) +" VALUES " + self.parenth_util(vals) + ";"
@@ -81,16 +81,16 @@ class backend:
             raise(err)
 
     def hash(self,password):
-        return str(hashlib.sha3_512(password.encode()).hexdigest())
+        return str(hashlib.sha3_512(password.encode()).hexdigest()) #hash password, maybe add salting in future to look good?
 
     def login(self,username,password): #takes in username and password entered into fields, checks if correct
         sql = "SELECT * FROM creator WHERE username = '" + username +"' AND password = '" + self.hash(password) + "';"
         try:
             self.execute_query(sql)
-            if self.results == []:
+            if self.results == []: #check resultset, if empty that means no match for usr and pw was found
                 return False
             else:   
-                return True           
+                return True #match found, meaning that usr + password was correct       
         except Exception as err:
             print(err)
 
@@ -98,7 +98,7 @@ class backend:
         try:#check if username exists block
             self.execute_query("SELECT * FROM creator WHERE username = '" +  username + "';")
             if self.results == []:
-                if len(password) > 0 and len(firstname) > 0 and len(lastname) > 0:
+                if len(password) > 0 and len(firstname) > 0 and len(lastname) > 0: #could improve field constraints in future
                     self.insert("creator",[username,self.hash(password),firstname,lastname])
                     return True
             else:
