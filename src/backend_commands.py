@@ -61,37 +61,24 @@ class backend:
         except Exception as err:
             return
     
-    def print_query(self):
-        try:  
-            self.get_results()
-            for r in self.results:
-                print(r)
-        except Exception as err:
-            print(err)
+    def parenth_util(self,lst,table_val = False): #returns a (x,y,z,..) as str of insterted or updated vals
+        ret = ""
+        str_delim = "\'" if not table_val else ""
+
+        for i in range(0,len(lst)):
+            ret += str(lst[i]) if type(lst[i]) != str else str_delim + lst[i] + str_delim    
+            ret += ", " if i < len(lst)-1 else ""
+        return "("+ret+")"
 
     def insert(self,table,vals):
         cols = self.table_map[table]
         l,v = len(cols),len(vals)
         assert(l == v)
         try:
-            command = ["INSERT INTO " + table + " (",") VALUES (",");"]
-            for (col,val) in zip(cols,vals):
-                command[0] += col
-                command[1] += str(val) if type(val) != str else "\'" + val + "\'" 
-                if col != cols[-1]:
-                    command[0] += ", "  
-                    command[1] += ", "
-            self.execute_query("".join(command))
-        except Exception as err:
-            print(err) 
- 
-    def search_for_recipe_by_name(self,search_word): #searces recipes by name
-        try:
-            command = "SELECT name FROM recipe WHERE name LIKE \'%" + str(search_word) + "%\';"
+            command = "INSERT INTO " + table + " " + self.parenth_util(cols,True) +" VALUES " + self.parenth_util(vals) + ";"
             self.execute_query(command)
-            self.print_query(self.cursor)
         except Exception as err:
-            print(err)
+            raise(err)
 
     def hash(self,password):
         return str(hashlib.sha3_512(password.encode()).hexdigest())
