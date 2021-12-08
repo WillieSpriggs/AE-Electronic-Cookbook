@@ -105,3 +105,19 @@ class backend:
                 return False
         except Exception as err:
             print(err)
+    
+    def load_all_recipes(self):
+        try: 
+            self.execute_query("SELECT * FROM recipe")
+            if self.results == []:
+                return False
+            else:
+                return self.results
+        except Exception as err:
+            print(err)
+
+    def create_new_recipe(self, recipe_name):
+        pass
+
+    def delete_recipe(self, recipe_name):
+        pass

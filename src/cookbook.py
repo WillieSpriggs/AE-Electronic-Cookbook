@@ -15,8 +15,10 @@ class Application(tk.Tk):
     self.container.grid_rowconfigure(0, weight=1)
     self.container.grid_columnconfigure(0, weight=1)
 
+    self.current_user = None
     self.frames = {}
     self.current_recipe = None
+    self.recipes = []
 
     for F in (Login, SignUp):
       self.add_frame(F)
@@ -24,6 +26,13 @@ class Application(tk.Tk):
     self.show_frame('Login')
 
   def load_home_frame(self):
+    recipes = global_backend.load_all_recipes()
+    print(recipes)
+    if (recipes != False):
+      self.recipes = recipes
+    else:
+      self.recipes = []
+
     self.add_frame(Home)
     self.show_frame('Home')
 
@@ -31,13 +40,16 @@ class Application(tk.Tk):
     self.add_frame(ViewRecipe)
     self.show_frame('ViewRecipe')
 
-  def load_edit_frame(self):
-    self.add_frame(EditRecipe)
+  def load_edit_frame(self, new_recipe=False):
+    self.add_frame(EditRecipe, new_recipe)
     self.show_frame('EditRecipe')
 
-  def add_frame(self, F):
+  def add_frame(self, F, new_recipe=False):
     page_name = F.__name__
-    frame = F(parent=self.container, controller=self)
+    if (new_recipe==False):
+      frame = F(parent=self.container, controller=self)
+    else: 
+      frame = F(parent=self.container, controller=self, new_recipe=new_recipe)
     self.frames[page_name] = frame
     frame.grid(row=0, column=0, sticky='nsew')
   
@@ -94,6 +106,7 @@ class Login(tk.Frame):
       if self.pw_err != None:
         self.pw_err.after(1,self.pw_err.destroy())
         self.pw_err = None
+      self.controller.current_user = usr
       self.controller.load_home_frame()
     else:
       self.pw_err = tk.Label(self, text='Incorrect username/password')
@@ -161,10 +174,6 @@ class SignUp(tk.Frame):
       self.usr_taken = tk.Label(self, text='Username taken')
       self.usr_taken.grid(row=4, column = 1, sticky=tk.W, padx=10, pady=6)
 
-recipes = [{'name': 'Beef Stew', 'description': 'Really yummy stew.'}, 
-        {'name': 'Chicken Alfredo', 'description': 'It has spinach in it. Yum.'}, 
-        {'name': 'Veggie Stew', 'description': 'This one is for the healthy eaters.'}]
-
 class Home(tk.Frame):
   def __init__(self, parent, controller):
     tk.Frame.__init__(self, parent)
@@ -178,7 +187,7 @@ class Home(tk.Frame):
     description_label = tk.Label(self, text='Description')
     description_label.grid(row=1, column=1, sticky=tk.W, padx=10, pady=(15, 0))
     row_num = 2
-    for recipe in recipes:
+    for recipe in self.controller.recipes:
       recipe_title = tk.Label(self, text=recipe['name'])
       recipe_title.grid(row=row_num, column=0, sticky=tk.W, padx=10)
       recipe_description = tk.Label(self, text=recipe['description'])
@@ -196,8 +205,7 @@ class Home(tk.Frame):
     self.controller.remove_frame('Home')
 
   def create_recipe(self):
-    self.controller.set_current_recipe('new recipe')
-    self.controller.load_recipe_frame()
+    self.controller.load_edit_frame(True)
     self.controller.remove_frame('Home')
 
 created_by = [{'creator_user': 'Willie2018', 'recipe_name': '', 'date_created': '11/28/2021', 'last_updated': '11/29/2021'}]
@@ -225,7 +233,7 @@ class ViewRecipe(tk.Frame):
     creation_label.grid(row=1, column=0, sticky=tk.W, padx=10)
     updated_label = tk.Label(self, text='Last Updated: ' + created_by[0]['last_updated'])
     updated_label.grid(row=1, column=1, sticky=tk.W, padx=10)
-    description_label = tk.Label(self, text='Description: ' + recipes[1]['description'])
+    description_label = tk.Label(self, text='Description: ' + self.controller.recipes[1]['description'])
     description_label.grid(row=2, column=0, sticky=tk.W, padx=10)
     
     ingredients_title = tk.Label(self, text="Ingredients")
@@ -269,26 +277,33 @@ class ViewRecipe(tk.Frame):
     self.controller.load_edit_frame()
 
 class EditRecipe(tk.Frame):
-  def __init__(self, parent, controller):
+  def __init__(self, parent, controller, new_recipe=False):
     tk.Frame.__init__(self, parent)
     self.controller = controller
+    self.new_recipe = new_recipe
     current_recipe = self.controller.get_current_recipe()
 
     recipe_title = tk.Entry(self)
     recipe_title.grid(row=0, column=0, sticky=tk.W, padx=10, pady=(10, 0))
     self.recipe_title_contents = tk.StringVar()
-    self.recipe_title_contents.set(current_recipe)
-    recipe_title['textvariable'] = self.recipe_title_contents
-    author_label = tk.Label(self, text='Author: ' + created_by[0]['creator_user'])
-    author_label.grid(row=0, column=1, sticky=tk.W, padx=10, pady=(10, 0))
-    creation_label = tk.Label(self, text='Date Created: ' + created_by[0]['date_created'])
-    creation_label.grid(row=1, column=0, sticky=tk.W, padx=10)
-    updated_label = tk.Label(self, text='Last Updated: ' + created_by[0]['last_updated'])
-    updated_label.grid(row=1, column=1, sticky=tk.W, padx=10)
+    if (self.new_recipe==False):
+      self.recipe_title_contents.set(current_recipe)
+      recipe_title['textvariable'] = self.recipe_title_contents
+      author_label = tk.Label(self, text='Author: ' + created_by[0]['creator_user'])
+      author_label.grid(row=0, column=1, sticky=tk.W, padx=10, pady=(10, 0))
+      creation_label = tk.Label(self, text='Date Created: ' + created_by[0]['date_created'])
+      creation_label.grid(row=1, column=0, sticky=tk.W, padx=10)
+      updated_label = tk.Label(self, text='Last Updated: ' + created_by[0]['last_updated'])
+      updated_label.grid(row=1, column=1, sticky=tk.W, padx=10)
+    else: 
+      self.recipe_title_contents.set('new_recipe'+str(random.range(0,10000)))
     description = tk.Entry(self)
     description.grid(row=2, column=0, sticky=tk.W, padx=10)
     self.description_contents = tk.StringVar()
-    self.description_contents.set(recipes[1]['description'])
+    if (self.new_recipe==False):
+      self.description_contents.set(self.controller.recipes[1]['description'])
+    else: 
+      self.description_contents.set('enter description here')
     description['textvariable'] = self.description_contents
     
     ingredients_title = tk.Label(self, text="Ingredients")
@@ -300,8 +315,9 @@ class EditRecipe(tk.Frame):
     base_row = 10
     self.ingredient_id = 0
     self.ingredients_dict = {}
-    for I in contains_ingredient:
-      self.add_ingredient(I, base_row)
+    if (self.new_recipe==False):
+      for I in contains_ingredient:
+        self.add_ingredient(I, base_row)
     add_ingredient_button = tk.Button(self, text='Add Ingredient', command=partial(self.add_ingredient, {'recipe_name': '', 'ingredient_name': '', 'amount': 0, 'measurement': ''}, base_row))
     add_ingredient_button.grid(row=30, column=0, sticky=tk.W, padx=10, pady=4)
  
@@ -310,8 +326,9 @@ class EditRecipe(tk.Frame):
     base_row = 32
     self.step_id = 0
     self.steps_dict = {}
-    for S in steps:
-      self.add_step(S, base_row)
+    if (self.new_recipe==False):
+      for S in steps:
+        self.add_step(S, base_row)
     add_step_button = tk.Button(self, text='Add Step', command=partial(self.add_step, {'recipe_name': '', 'num': self.step_id+1, 'description': ''}, base_row))
     add_step_button.grid(row=52, column=0, sticky=tk.W, padx=10, pady=4)
 
