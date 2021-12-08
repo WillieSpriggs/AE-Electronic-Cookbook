@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from functools import partial
 from backend_commands import backend
+from datetime import datetime
 
 global_backend = backend()
 
@@ -353,54 +354,42 @@ class EditRecipe(tk.Frame):
 
   def submit_edits(self):
     self.controller.remove_frame('ViewRecipe')
-    # Add edits to database
+    
+    date = str(datetime.now().strftime('%m/%d/%Y'))
     recipe = {'name': self.recipe_title_contents.get(), 'description': self.description_contents.get()}
-    created_by = {'creator_user': 'a', 'recipe_name': self.recipe_title_contents.get(), 'date_created': '11/28/2021', 'last_updated': '11/29/2021'}
-    contains_ingredient = []
+    recipe = self.list_util(recipe,"recipe")
+    global_backend.insert("recipe",recipe) #update original insert
+    
+    created_by = {'creator_user': 'a', 'recipe_name': self.recipe_title_contents.get(), 'date_created': date, 'last_updated': date}
+    created_by = self.list_util(created_by,"created_by")
+    global_backend.insert("created_by",created_by)
+
     for ingredient_id in self.ingredients_dict:
-      contains_ingredient.append({
+      global_backend.execute_query("select * from ingredient where name = '" + self.ingredients_dict[ingredient_id]['i_var'].get() + "';")
+      if len(global_backend.results) == 0:
+        global_backend.insert("ingredient",[self.ingredients_dict[ingredient_id]['i_var'].get()])
+      dct = {
         'recipe_name': self.recipe_title_contents.get(), 
         'ingredient_name': self.ingredients_dict[ingredient_id]['i_var'].get(), 
         'amount': float(self.ingredients_dict[ingredient_id]['a_var'].get()), 
         'measurement': self.ingredients_dict[ingredient_id]['m_var'].get()
-        })
-    nutrition = {}
-    for nutrition_fact in self.nutritition_dict:
-      nutrition[nutrition_fact] = float(self.nutritition_dict[nutrition_fact].get())
-    nutrition["recipe_name"] = self.recipe_title_contents.get()
-    steps = []
-    for step_id in self.steps_dict:
-      steps.append({
-        'recipe_name': self.recipe_title_contents.get(), 
-        'num': step_id, 
-        'description': self.steps_dict[step_id]['var'].get()
-        })
-    # translating step_ids into step_nums
-    for i in range(len(steps)):
-      step_intermidiate = steps[i]
-      step_intermidiate['num'] = i+1
-      steps[i] = step_intermidiate
-
-    recipe = self.list_util(recipe,"recipe")
-    nutrition = self.list_util(nutrition,"nutrition")
-    created_by = self.list_util(created_by,"created_by")
-
-    global_backend.insert("recipe",recipe) #update original insert
-
-    for ele in contains_ingredient:
-      global_backend.execute_query("select * from ingredient where name = '" + ele["ingredient_name"] + "';")
-      if len(global_backend.results) == 0:
-        global_backend.insert("ingredient",[ele["ingredient_name"]])
-  
-    for ele in contains_ingredient:
-      global_backend.insert("contains_ingredient",self.list_util(ele,"contains_ingredient"))
-
-    for ele in steps:
-      global_backend.insert("step",self.list_util(ele,"step"))
-
+        }
+      global_backend.insert("contains_ingredient",self.list_util(dct,"contains_ingredient"))
     
-    global_backend.insert("created_by",created_by)
-    global_backend.insert("nutrition",nutrition)
+    for nutrition_fact in self.nutritition_dict:
+      self.nutritition_dict[nutrition_fact] = float(self.nutritition_dict[nutrition_fact].get())
+    self.nutritition_dict["recipe_name"] = self.recipe_title_contents.get()
+    global_backend.insert("nutrition",self.list_util(self.nutritition_dict,"nutrition"))
+    
+    for step_id in self.steps_dict:
+      tmp = int(step_id) + 1
+      dict = {
+        'recipe_name': self.recipe_title_contents.get(), 
+        'num': str(tmp), 
+        'description': self.steps_dict[step_id]['var'].get()
+        }
+      global_backend.insert("step",self.list_util(dict,"step"))
+
     self.controller.load_recipe_frame()
     self.controller.remove_frame('EditRecipe')
 
