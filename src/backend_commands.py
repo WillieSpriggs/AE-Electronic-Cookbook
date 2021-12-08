@@ -5,7 +5,7 @@ class backend:
     init_db = True #bool to check whether tables need to be created for the DB
     recpie = ["name","description"]
     ingredient = ["name"]
-    creator = ["username","password","firstname","lastname"]
+    creator = ["username","password"]
     created_by = ["creator_user","recipe_name","date_created","last_updated"]
     contains_ingredient = ["recipe_name","ingredient_name","amount","measurement"]
     step = ["recipe_name","num","description"]
@@ -34,7 +34,7 @@ class backend:
 
     def connect_db(self,db_name):
         try:  #login function to postgres, assumes password is ADMIN. YOU MAY (PROBABLY WILL) NEED TO CHANGE THIS!!!!
-            self.conn = psycopg2.connect(database=db_name, user='postgres', password='admin', host='127.0.0.1', port= '5432') #establishing the connection)
+            self.conn = psycopg2.connect(database=db_name, user='postgres', password='1722', host='127.0.0.1', port= '5432') #establishing the connection)
             self.conn.autocommit = True #reduce total loc by autocommitting
             self.cursor = self.conn.cursor()
         except Exception as err:
