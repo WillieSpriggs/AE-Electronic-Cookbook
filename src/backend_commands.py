@@ -58,6 +58,7 @@ class backend:
     def get_results(self): #this function refreshes the result set and stores it in the class for later references
         try:  
             self.results = self.cursor.fetchall()
+            print(self.results)
         except Exception as err:
             return
     
@@ -108,7 +109,7 @@ class backend:
     
     def load_all_recipes(self):
         try: 
-            self.execute_query("SELECT * FROM recipe")
+            self.execute_query("SELECT * FROM recipe;")
             if self.results == []:
                 return False
             else:
@@ -116,8 +117,37 @@ class backend:
         except Exception as err:
             print(err)
 
-    def create_new_recipe(self, recipe_name):
-        pass
+    def load_recipe(self, recipe_name):
+        created_by = []
+        contains_ingredient = []
+        steps = []
+        nutrition = []
+
+        try: 
+            self.execute_query("SELECT * FROM created_by WHERE recipe_name = '" + recipe_name + "';")
+            if (self.results != []):
+                created_by = self.results
+            else:
+                return False
+        except Exception as err:
+            print(err)
+        try: 
+            self.execute_query("SELECT * FROM contains_ingredient WHERE recipe_name = '" + recipe_name + "';")
+            contains_ingredient = self.results
+        except Exception as err:
+            print(err)
+        try: 
+            self.execute_query("SELECT * FROM step WHERE recipe_name = '" + recipe_name + "';")
+            steps = self.results
+        except Exception as err:
+            print(err)
+        try: 
+            self.execute_query("SELECT * FROM nutrition WHERE recipe_name = '" + recipe_name + "';")
+            nutrition = self.results
+        except Exception as err:
+            print(err)
+
+        return {'created_by': created_by, 'contains_ingredient': contains_ingredient, 'steps': steps, 'nutrition': nutrition}
 
     def delete_recipe(self, recipe_name):
         pass
