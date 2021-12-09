@@ -3,14 +3,14 @@ import hashlib
 
 class backend:
     init_db = True #bool to check whether tables need to be created for the DB
-    recpie = ["name","description"]
+    recipe = ["name","description"]
     ingredient = ["name"]
     creator = ["username","password"]
     created_by = ["creator_user","recipe_name","date_created","last_updated"]
     contains_ingredient = ["recipe_name","ingredient_name","amount","measurement"]
     step = ["recipe_name","num","description"]
     nutrition = ["recipe_name", "servings" , "calories" , "saturated_fat" , "trans_fat" , "cholesterol" , "sodium" , "total_carbs", "dietary_fiber", "sugars", "protein"]
-    table_map = {"recipe":recpie,"ingredient":ingredient,"creator":creator,"created_by":created_by,"contains_ingredient":contains_ingredient,"step":step,"nutrition":nutrition}
+    table_map = {"recipe":recipe,"ingredient":ingredient,"creator":creator,"created_by":created_by,"contains_ingredient":contains_ingredient,"step":step,"nutrition":nutrition}
     
     def __init__(self) -> None:
         self.connect_db("postgres") #sign into default postgres db to create aggieeats db
@@ -79,6 +79,20 @@ class backend:
             self.execute_query(command)
         except Exception as err:
             raise(err)
+
+    def update(self, tables, attribute, new_value, key):
+        original_attribute = attribute
+        print("Updating: ")
+        for i in range(0, len(tables)):
+            table_key = "recipe_name"
+            attribute = original_attribute
+            
+            if(tables[i] == "recipe"):
+                table_key = "name"
+                if(attribute == "recipe_name"):
+                    attribute = "name"
+            sql = "UPDATE " + tables[i] + " SET " + attribute + "='" + new_value + "' WHERE " + table_key + "='" + key +"';"
+            self.execute_query(sql)
 
     def hash(self,password):
         return str(hashlib.sha3_512(password.encode()).hexdigest()) #hash password, maybe add salting in future to look good?
