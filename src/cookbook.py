@@ -413,16 +413,28 @@ class EditRecipe(tk.Frame):
 
   def submit_edits(self):
     self.controller.remove_frame('ViewRecipe')
+
+    current_recipe = self.controller.get_current_recipe()
+    print("Current Recipe: " + current_recipe)
     
+    # updating name and description
+    # name needs to be updated in table: Recipe, Contains_Ingredient, Created_By, Step, Nutrition
     date = str(datetime.now().strftime('%m/%d/%Y'))
     recipe = {'name': self.recipe_title_contents.get(), 'description': self.description_contents.get()}
     recipe = self.list_util(recipe,"recipe")
-    global_backend.insert("recipe",recipe) #update original insert
-    
     created_by = {'creator_user': self.controller.current_user, 'recipe_name': self.recipe_title_contents.get(), 'date_created': date, 'last_updated': date}
     created_by = self.list_util(created_by,"created_by")
-    global_backend.insert("created_by",created_by)
+    if (self.new_recipe != False):
+      #insert
+      global_backend.insert("recipe",recipe) #update original insert
+      global_backend.insert("created_by",created_by)
+    else:
+      #update
+      global_backend.update(["recipe", "contains_ingredient", "created_by", "step", "nutrition"], "recipe_name", self.recipe_title_contents.get(), current_recipe)
+      global_backend.update(["recipe"], "description", self.description_contents.get(), current_recipe)
 
+    # delete all stored ingredients
+    global_backend.execute_query("DELETE FROM contains_ingredient WHERE recipe_name = '" + current_recipe + "';")
     for ingredient_id in self.ingredients_dict:
       global_backend.execute_query("select * from ingredient where name = '" + self.ingredients_dict[ingredient_id]['i_var'].get() + "';")
       if len(global_backend.results) == 0:
@@ -433,13 +445,20 @@ class EditRecipe(tk.Frame):
         'amount': float(self.ingredients_dict[ingredient_id]['a_var'].get()), 
         'measurement': self.ingredients_dict[ingredient_id]['m_var'].get()
         }
+      # insert ingredients from form
       global_backend.insert("contains_ingredient",self.list_util(dct,"contains_ingredient"))
+
     
     for nutrition_fact in self.nutritition_dict:
       self.nutritition_dict[nutrition_fact] = float(self.nutritition_dict[nutrition_fact].get())
     self.nutritition_dict["recipe_name"] = self.recipe_title_contents.get()
+    # delete all stored nutrition facts
+    global_backend.execute_query("DELETE FROM nutrition WHERE recipe_name = '" + current_recipe + "';")
+    # insert nutrition facts from form
     global_backend.insert("nutrition",self.list_util(self.nutritition_dict,"nutrition"))
-    
+  
+    # delete all stored steps
+    global_backend.execute_query("DELETE FROM step WHERE recipe_name = '" + current_recipe + "';")
     for step_id in self.steps_dict:
       tmp = int(step_id) + 1
       dict = {
@@ -447,6 +466,7 @@ class EditRecipe(tk.Frame):
         'num': str(tmp), 
         'description': self.steps_dict[step_id]['var'].get()
         }
+      # insert steps from form
       global_backend.insert("step",self.list_util(dict,"step"))
 
     self.controller.set_current_recipe(self.recipe_title_contents.get())
