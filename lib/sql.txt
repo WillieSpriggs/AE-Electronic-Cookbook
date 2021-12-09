@@ -1,0 +1,7 @@
+CREATE TABLE recipe (name VARCHAR(20), description text, PRIMARY KEY(name)); 
+CREATE TABLE ingredient (name VARCHAR(20), PRIMARY KEY(name));
+CREATE TABLE creator (username VARCHAR(20), password TEXT,firstname VARCHAR(20), lastname VARCHAR(20), PRIMARY KEY(username));
+CREATE TABLE created_by (creator_user VARCHAR(20), recipe_name VARCHAR(20), date_created TIMESTAMP, last_updated TIMESTAMP, PRIMARY KEY(creator_user, recipe_name), CONSTRAINT usr FOREIGN KEY (creator_user) REFERENCES creator(username),CONSTRAINT rcp FOREIGN KEY (recipe_name) REFERENCES recipe(name));
+CREATE TABLE contains_ingredient (recipe_name VARCHAR(20), ingredient_name VARCHAR(20), amount FLOAT, measurement VARCHAR(20), PRIMARY KEY(ingredient_name, recipe_name), CONSTRAINT iname FOREIGN KEY (ingredient_name) REFERENCES ingredient(name), CONSTRAINT rcp_n FOREIGN KEY (recipe_name) REFERENCES recipe(name));
+CREATE TABLE step (recipe_name VARCHAR(20), num INTEGER, description TEXT, PRIMARY KEY(recipe_name,num), CONSTRAINT rname FOREIGN KEY (recipe_name) REFERENCES recipe(name));
+CREATE TABLE nutrition (recipe_name VARCHAR(20), servings FLOAT, calories FLOAT, saturated_fat FLOAT, trans_fat FLOAT, cholesterol FLOAT, sodium FLOAT, total_carbs FLOAT, dietary_fiber FLOAT, sugars FLOAT, protein FLOAT, PRIMARY KEY(recipe_name), CONSTRAINT rname FOREIGN KEY (recipe_name) REFERENCES recipe(name));
